@@ -282,7 +282,7 @@ $F$ sous-espace **fermé** : tout $x$ a une unique projection $\pi(x)\in F$ avec
 $$x=\sum_{i}\langle x,e_i\rangle e_i,\qquad\|x\|^2=\sum_i\langle x,e_i\rangle^2,\qquad E^*\simeq E:\ \Lambda(y)=\langle x_\Lambda,y\rangle$$
 :::
 
-## Espaces $L^p$ | p. 131-144
+## Espaces Lp | p. 131-144
 :::def $L^p$
 $\mathcal L^p=\{f:\int|f|^pd\mu<\infty\}$, $\|f\|_p=\big(\int|f|^p\big)^{1/p}$ ; $\mathcal L^\infty$ : fonctions bornées p.p., $\|f\|_\infty=\inf\{C:|f|\le C\ \text{p.p.}\}$. $L^p$ est le quotient par l'égalité p.p. (sinon $\|f\|_p=0$ n'entraînerait pas $f=0$).
 :::

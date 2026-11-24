@@ -2,7 +2,7 @@
 (function(){
 const COURS=[]; const parId={};
 const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-const TYPES={clair:'En clair',intuition:'L’idée',def:'Définition',theo:'Théorème',preuve:'Démonstration',formule:'Formule',exemple:'Exemple',piege:'Attention',methode:'Méthode',exo:'Exercice',labo:'Simulateur'};
+const TYPES={clair:'En clair',logique:'La logique, pas à pas',intuition:'L’idée',def:'Définition',theo:'Théorème',preuve:'Démonstration',formule:'Formule',exemple:'Exemple',piege:'Attention',methode:'Méthode',exo:'Exercice',labo:'Simulateur'};
 function tex(s,bloc){
   try{return katex.renderToString(s,{displayMode:bloc,throwOnError:true,strict:false})}
   catch(e){(window.ERREURS=window.ERREURS||[]).push(e.message+' :: '+s);return '<code class="err">'+esc(s)+'</code>'}
@@ -88,5 +88,11 @@ function PLUS(id,src){const c=parId[id];for(const p of src.split(/^## /m).slice(
   if(k){const l=c.lecons[k[1]-1],n=lec('','',b);l.src+='\n'+b;l.formules.push(...n.formules)}
   else{const [ti,ref]=t.split(' | ');c.lecons.push(lec(ti,ref,b))}}}
 function EXPLIQUE(id,src){const c=parId[id];for(const p of src.split(/^## /m).slice(1)){const nl=p.indexOf('\n'),l=c.lecons[parseInt(p)-1];if(!l)throw new Error(id+' : pas de leçon '+p.slice(0,nl));l.clair=true;l.src=':::clair\n'+p.slice(nl+1).trim()+'\n:::\n'+l.src}}
-window.COURS=COURSf;window.PLUS=PLUS;window.EXPLIQUE=EXPLIQUE;window.TDR={liste:COURS,parId,html,inline,tex,esc};
+// LOGIQUE : « ## n » puis cinq lignes p (problème) i (idée) d (donc) s (sans ça) e (ensuite).
+const ETAPES={p:'Le problème',i:'L’idée',d:'Donc',s:'Si on l’enlève',e:'Et ensuite'};
+function LOGIQUE(id,src){const c=parId[id];for(const p of src.split(/^## /m).slice(1)){const L=p.trim().split('\n'),l=c.lecons[parseInt(L[0])-1];if(!l)throw new Error(id+' : pas de leçon '+L[0]);
+  const o={};for(const x of L.slice(1))if(x)o[x[0]]=x.slice(2);l.logique=o;
+  const b=':::logique\n'+Object.keys(ETAPES).filter(k=>o[k]).map(k=>'- **'+ETAPES[k]+'.** '+o[k]).join('\n')+'\n:::\n';
+  const k=l.src.startsWith(':::clair')?l.src.indexOf('\n:::\n')+5:0;l.src=l.src.slice(0,k)+b+l.src.slice(k)}}
+window.LOGIQUE=LOGIQUE;window.COURS=COURSf;window.PLUS=PLUS;window.EXPLIQUE=EXPLIQUE;window.TDR={liste:COURS,parId,html,inline,tex,esc};
 })();

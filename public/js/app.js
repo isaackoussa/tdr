@@ -28,7 +28,7 @@ function accueil(){
 function doc(c){
   const q=E.quiz[c.id];
   vue.innerHTML='<div class="page"><p class="fil">'+c.famille+'</p><h1>'+c.titre+'</h1><p class="chapo">'+c.resume+'</p><p class="src">Source : '+c.fichier+' — '+c.auteur+'</p>'+
-   '<div class="actions">'+c.podcasts.map((p,k)=>'<a class="bt plein" href="#/c/'+c.id+'/podcast/'+k+'">▶ Podcast</a>').join('')+'<a class="bt" href="#/c/'+c.id+'/quiz">Quiz'+(q!=null?' · '+q+'/'+c.quiz.length:'')+'</a><a class="bt" href="#/c/'+c.id+'/cartes">Cartes mémoire</a><a class="bt" href="#/formules/'+c.id+'">Formulaire</a><a class="bt" href="#/demander/podcast/'+c.id+'">Podcast IA sur mesure</a></div>'+
+   '<div class="actions">'+c.podcasts.map((p,k)=>'<a class="bt plein" href="#/c/'+c.id+'/podcast/'+k+'">▶ Podcast</a>').join('')+'<a class="bt" href="#/c/'+c.id+'/quiz">Quiz'+(q!=null?' · '+q+'/'+c.quiz.length:'')+'</a><a class="bt" href="#/c/'+c.id+'/cartes">Cartes mémoire</a><a class="bt" href="#/logique/'+c.id+'">La logique</a><a class="bt" href="#/formules/'+c.id+'">Formulaire</a><a class="bt" href="#/demander/podcast/'+c.id+'">Podcast IA sur mesure</a></div>'+
    '<ol class="som">'+c.lecons.map((l,i)=>'<li><a href="#/c/'+c.id+'/'+i+'"><strong>'+l.titre+'</strong><span>'+l.ref+(E.lu[c.id+'/'+i]?' · lu':'')+'</span></a></li>').join('')+'</ol></div>';
   finir('accueil');
 }
@@ -38,6 +38,7 @@ function lecon(c,i){
    '<footer class="bas"><button class="bt plein" id="lu">'+(E.lu[k]?'✓ Leçon lue':'Marquer comme lue')+'</button><div>'+(i?'<a class="bt" href="#/c/'+c.id+'/'+(i-1)+'">← '+c.lecons[i-1].titre+'</a>':'')+(c.lecons[i+1]?'<a class="bt" href="#/c/'+c.id+'/'+(i+1)+'">'+c.lecons[i+1].titre+' →</a>':'<a class="bt" href="#/c/'+c.id+'/quiz">Passer au quiz →</a>')+'</div></footer><section class="aide-ia"><h2>Demander à l’IA sur cette leçon</h2><div id="pan"></div></section></article>';
   IA.panneau($('#pan'),{c,i});
   $('#lu').onclick=()=>{E.lu[k]?delete E.lu[k]:E.lu[k]=1;$('#lu').textContent=E.lu[k]?'✓ Leçon lue':'Marquer comme lue';sauver()};
+  pasAPas();
   $('#vers-ia').onclick=()=>{$('.aide-ia').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth'});$('.aide-ia input').focus({preventScroll:true})};
   $('#ecouter').onclick=()=>ORAL.charger(lecture(c,i),true);
   finir('accueil');
@@ -96,6 +97,49 @@ function pagePod(e,fil,ext,plus){
   vue.querySelectorAll('.trans button').forEach(b=>b.onclick=()=>{if(!ORAL.P.file||ORAL.P.file.id!==e.id)ORAL.charger(e,true);const go=()=>ORAL.aller(+b.dataset.i);e.mp3&&ORAL.audio.readyState<1?ORAL.audio.addEventListener('loadedmetadata',go,{once:true}):go()});
   finir('podcasts');majL(ORAL.P);
 }
+// ---- logique : une étape à la fois, pour avoir le temps de deviner
+function pasAPas(){const b=$('.logique');if(!b)return;const L=[...b.querySelectorAll('li')];if(L.length<2)return;let n=1;
+  const z=document.createElement('div');z.className='actions';z.innerHTML='<button class="bt plein"></button><button class="bt">Tout montrer</button>';b.append(z);const [s,t]=z.children;
+  const Q=['','Comment ferais-tu ? Voir l’idée','Qu’est-ce que cela donne ?','Et si on enlève une condition ?','Où cela mène-t-il ?'];
+  const maj=f=>{L.forEach((x,i)=>x.hidden=i>=n);if(n>=L.length)z.remove();else s.textContent=Q[n]||'Suite';if(f){L[n-1].tabIndex=-1;L[n-1].focus({preventScroll:true})}};
+  s.onclick=()=>{n++;maj(true)};t.onclick=()=>{n=L.length;maj(false)};maj()}
+const chaine=c=>'<ol class="chaine">'+c.lecons.map((l,i)=>'<li><a href="#/c/'+c.id+'/'+i+'"><strong>'+l.titre+'</strong></a><p>'+inline(l.logique.p)+'</p><p class="fl">'+inline(l.logique.e)+'</p></li>').join('')+'</ol>';
+// Fil conducteur entre documents : [id, question posée, ce qu'il transmet]
+const FIL=[['topologie','Que veut dire « s’approcher », et quand un optimum existe-t-il ?','Limites, compacité et dérivées : les règles du jeu de tout le reste.'],
+['bilineaire','Comment mesurer longueurs, angles et dépendances ?','La covariance et la projection : portefeuille, régression, diversification.'],
+['mesure','Comment définir une probabilité et une espérance sans contradiction ?','Densités, espérance conditionnelle, changement de probabilité.'],
+['ruine','Combien un portefeuille d’assurance va-t-il coûter, et va-t-il survivre ?','Prix, capital, ruine. Mais la borne de Lundberg exige des queues légères.'],
+['extremes','Que faire quand les queues sont lourdes ?','Une loi pour les catastrophes, avec un seul paramètre de forme.'],
+['var','Comment résumer le risque d’un portefeuille en un chiffre ?','VaR et ES. Il faut une volatilité qui bouge avec le temps.'],
+['garch','Comment prévoir la volatilité de demain ?','Des résidus propres, sur lesquels on peut appliquer les extrêmes.'],
+['gbongue','Que donne tout cela sur de vrais marchés africains en crise ?','GARCH, extrêmes, copules et VaR assemblés dans une seule étude.'],
+['bale','Combien de capital une banque doit-elle détenir ?','Le passage de la mesure du risque à la règle et à la décision.'],
+['cima0','Quels mots faut-il pour parler d’assurance vie ?','Un vocabulaire daté et précis.'],
+['cima1','Qui garantit qu’une promesse de vingt ans sera tenue ?','Les institutions, l’agrément, la gouvernance.'],
+['cima2','Comment fixer le prix de cette promesse ?','Tables, taux, équivalence : le tarif.'],
+['cima3','Que peut faire l’assuré pendant ces vingt ans ?','Rachat, réduction, avance : des options qui pèsent sur l’assureur.'],
+['cima4','Où est l’argent qui couvre la promesse ?','Provisions, actifs admis, couverture : la preuve que l’on tiendra parole.']];
+const PONTS=[['Compacité','topologie',5,'Portefeuille de variance minimale','bilineaire',4,'L’ensemble des poids est compact et la variance continue : le minimum existe.'],
+['Schwarz','bilineaire',4,'Diversification','var',6,'La covariance est une forme positive : l’écart-type d’une somme ne dépasse pas la somme des écarts-types.'],
+['Projection','bilineaire',5,'Espérance conditionnelle','mesure',9,'Prévoir au mieux, c’est projeter sur ce que l’on sait.'],
+['Convergence monotone','mesure',4,'Formule de Wald','ruine',2,'Le total aléatoire est une limite croissante : on peut échanger somme et espérance.'],
+['Fubini','mesure',6,'Espérance tronquée','ruine',4,'Écrire min(X,P) comme une intégrale, puis échanger : l’aire sous la queue.'],
+['Condition de Lundberg','ruine',9,'Queues lourdes','extremes',3,'Quand la fonction génératrice est infinie, R n’existe pas : il faut les extrêmes.'],
+['Filtrage GARCH','garch',4,'Extrêmes conditionnels','gbongue',2,'La théorie des extrêmes demande des données indépendantes : GARCH les fabrique.'],
+['Théorème d’Euler','topologie',6,'Allocation du capital','bale',6,'Dériver une fonction homogène redonne exactement le total.'],
+['VaR composée','var',7,'Euler en banque','bale',6,'La même formule sous deux noms.'],
+['Radon-Nikodym','mesure',10,'Mesures cohérentes','var',8,'Une mesure cohérente est une espérance sous la pire probabilité.'],
+['Équivalence actuarielle','cima2',4,'Provision','cima4',1,'La provision est la même balance, refaite plus tard.'],
+['Provision','cima4',1,'Rachat','cima3',3,'La valeur de rachat est la provision moins une indemnité.'],
+['Expected Shortfall','ruine',7,'Bâle IV','bale',1,'Le régulateur remplace la VaR par l’ES car elle voit derrière la porte.'],
+['Shapley','bale',6,'Marge implicite','cima4',6,'Partager un effet sans dépendre de l’ordre : en banque comme en assurance.']];
+function logique(id){
+  const c=parId[id];
+  if(c){vue.innerHTML='<div class="page"><p class="fil"><a href="#/logique">La logique</a></p><h1>'+c.titre+'</h1><p class="chapo">Chaque leçon répond à un problème laissé par la précédente.</p><div class="actions"><button class="bt plein" id="ecl">▶ Écouter le fil</button><a class="bt" href="#/c/'+c.id+'">Voir le cours</a></div>'+chaine(c)+'</div>';
+    $('#ecl').onclick=()=>ORAL.charger({id:'log-'+c.id,titre:'La logique : '+c.titre,cours:c.titre,lignes:c.lecons.flatMap(l=>ORAL.phrases(l.titre+'. '+l.logique.p+' '+l.logique.i+' '+l.logique.e)).map(t=>({t})),lien:'#/logique/'+c.id,suite:()=>null},true)}
+  else vue.innerHTML='<div class="page"><h1>La logique</h1><p class="chapo">Pourquoi chaque chose existe, et comment elle mène à la suivante.</p><h2>Le fil des 14 documents</h2><ol class="chaine">'+FIL.map(([d,q,t])=>'<li><a href="#/logique/'+d+'"><strong>'+parId[d].titre+'</strong></a><p>'+q+'</p><p class="fl">'+t+'</p></li>').join('')+'</ol><h2>La même idée, ailleurs</h2><p class="src">Une idée comprise une fois sert dans plusieurs documents.</p><ul class="ponts">'+PONTS.map(([a,x,i,b,y,j,t])=>'<li><p><a href="#/c/'+x+'/'+i+'">'+a+'</a> → <a href="#/c/'+y+'/'+j+'">'+b+'</a></p><p>'+t+'</p></li>').join('')+'</ul></div>';
+  finir('logique');
+}
 // ---- demandes à l'IA
 function demander(m,id,i){
   const c=parId[id]||null;
@@ -147,7 +191,7 @@ function route(){
     else if(d==='cartes')cartes(c.cartes.map(k=>[c,k]),c.titre,'#/c/'+b);
     else if(d==='podcast')podcast(c,+e||0);
     else if(d&&c.lecons[+d])lecon(c,+d);else doc(c)}
-  else if(a==='podcasts')podcasts();else if(a==='formules')formules(b);else if(a==='reviser')reviser();else if(a==='labo')labo();
+  else if(a==='podcasts')podcasts();else if(a==='formules')formules(b);else if(a==='reviser')reviser();else if(a==='labo')labo();else if(a==='logique')logique(b);
   else if(a==='demander')demander(b,d,e);else if(a==='ia'&&b)demande(b);
   else if(a==='chercher'&&b)recherche(b);else accueil();
   document.title=($('h1',vue)?$('h1',vue).textContent.slice(0,60)+' · ':'')+'TDR M2';window.scrollTo(0,0);

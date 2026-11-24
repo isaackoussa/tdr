@@ -1,7 +1,7 @@
 # TDR — Théorie du risque, Master 2
 
 Application web d'apprentissage : les 14 documents du Master expliqués un par un.
-128 leçons avec un encadré « En clair », formules en LaTeX, démonstrations, tous les
+128 leçons avec un encadré « En clair » et « La logique, pas à pas », formules en LaTeX, démonstrations, tous les
 exercices des polycopiés corrigés, quiz, cartes mémoire, 6 simulateurs, 14 podcasts,
 et des demandes à l'IA (Gemini) : podcast sur mesure, explication, exemple, exercices,
 quiz, fiche, question libre.
@@ -48,6 +48,7 @@ puis <http://localhost:4190>.
 | `public/cours/01` à `14` | un fichier par document (leçons, QUIZ, CARTES, PODCAST) |
 | `public/cours/20` à `24` | démonstrations et exercices ajoutés (`PLUS`) |
 | `public/cours/30` à `32` | encadrés « En clair » (`EXPLIQUE`) |
+| `public/cours/40` à `42` | la logique de chaque leçon (`LOGIQUE`) |
 | `public/js/` | moteur, voix, simulateurs, demandes IA, pages |
 | `public/audio/` | podcasts MP3 et minutages |
 | `public/vendor/katex/` | KaTeX 0.16.11 (licence MIT) |

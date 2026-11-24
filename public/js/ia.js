@@ -1,7 +1,7 @@
 // Demandes à l'IA (Gemini, via les fonctions Netlify /api/ia et /api/voix) et leur historique local.
 (function(){
 const {liste,parId,html,inline,esc}=TDR;const $=(s,r=document)=>r.querySelector(s);
-const MODES={podcast:'Podcast',expliquer:'Expliquer autrement',exemple:'Exemple chiffré',exercice:'Exercices',quiz:'Quiz',fiche:'Fiche de révision',question:'Ma question'};
+const MODES={podcast:'Podcast',expliquer:'Expliquer autrement',logique:'La logique',exemple:'Exemple chiffré',exercice:'Exercices',quiz:'Quiz',fiche:'Fiche de révision',question:'Ma question'};
 // ---- stockage : IndexedDB, sinon mémoire
 let mem=new Map(),base=null;
 const ouvrir=()=>base||(base=new Promise(ok=>{try{const r=indexedDB.open('tdr-ia',1);r.onupgradeneeded=()=>r.result.createObjectStore('d',{keyPath:'id'});r.onsuccess=()=>ok(r.result);r.onerror=()=>ok(null)}catch(e){ok(null)}}));
@@ -57,7 +57,7 @@ const rendre=t=>html(propre(t));
 // ---- formulaire, sur la page « Demander » ou au bas d'une leçon
 function panneau(zone,o){
   const fixe=o.c!=null&&o.i!=null;let c=o.c||null,i=o.i!=null?o.i:null,occupe=false;
-  const choix=fixe?['expliquer','exemple','exercice','quiz','podcast','question','fiche']:Object.keys(MODES);
+  const choix=fixe?['expliquer','logique','exemple','exercice','quiz','podcast','question','fiche']:Object.keys(MODES);
   zone.innerHTML='<form class="dem"><fieldset class="modes"><legend>Que veux-tu ?</legend>'+choix.map((m,k)=>'<label><input type="radio" name="mode" value="'+m+'"'+((o.mode||choix[0])===m?' checked':'')+'><span>'+MODES[m]+'</span></label>').join('')+'</fieldset>'+
    '<div class="champs">'+(fixe?'':'<label>Document<select name="doc"><option value="">Sujet libre</option>'+liste.map(x=>'<option value="'+x.id+'"'+(x===c?' selected':'')+'>'+x.titre+'</option>').join('')+'</select></label><label>Leçon<select name="lec"></select></label>')+
    '<label>Niveau<select name="niveau"><option value="debutant">Débutant</option><option value="master" selected>Master</option><option value="examen">Révision d’examen</option></select></label><label data-pod>Durée<select name="minutes"><option value="3">3 minutes</option><option value="5" selected>5 minutes</option><option value="8">8 minutes</option><option value="12">12 minutes</option></select></label><label data-pod>Ton<select name="ton"><option value="vivant">Vivant</option><option value="calme">Posé</option><option value="debat">Débat</option></select></label></div>'+

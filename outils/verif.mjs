@@ -19,6 +19,6 @@ for(const c of ctx.TDR.liste){
   for(const q of c.quiz){ctx.TDR.inline(q.q+q.e+q.r.map(r=>r.t).join(' '));if(q.r.filter(r=>r.ok).length!==1||q.r.length<3||!q.e)dire(c.id,'quiz',q.q)}
   for(const k of c.cartes){ctx.TDR.inline(k.r);ctx.TDR.inline(k.v)}
   ctx.ERREURS.forEach(e=>dire(c.id,'TEX',e));F+=n;
-  c.lecons.forEach((l,i)=>{if(!l.clair)dire(c.id,"leçon",i+1,"sans « En clair »")});console.log(c.id.padEnd(11),c.lecons.length,'leçons',n,'formules',c.quiz.length,'quiz',c.cartes.length,'cartes',c.podcasts.map(p=>p.lignes.length+' répliques').join());
+  c.lecons.forEach((l,i)=>{const g=l.logique||{};for(const k of 'pidse')if(!g[k])dire(c.id,'leçon',i+1,'logique incomplète :',k);if(!l.clair)dire(c.id,"leçon",i+1,"sans « En clair »")});console.log(c.id.padEnd(11),c.lecons.length,'leçons',n,'formules',c.quiz.length,'quiz',c.cartes.length,'cartes',c.podcasts.map(p=>p.lignes.length+' répliques').join());
 }
 console.log(F,'formules affichées ;',pb,'problème(s)');process.exit(pb?1:0);

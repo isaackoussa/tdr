@@ -17,6 +17,7 @@ const S = { type: 'string' };
 
 const MODES = {
   expliquer: () => `Explique cette leçon autrement, pas à pas : 1) l'idée en deux phrases avec une image concrète ; 2) chaque notion et chaque lettre ; 3) pourquoi la formule principale est vraie ; 4) un mini-exemple chiffré ; 5) l'erreur à éviter ; 6) une phrase à retenir.`,
+  logique: () => `Fais comprendre la LOGIQUE de cette leçon, sans réciter. 1) Le problème de départ, et pourquoi ce qu'on savait avant ne suffit pas. 2) Les tentatives naïves et pourquoi elles échouent. 3) L'idée qui débloque, et comment on aurait pu la trouver. 4) La chaîne "parce que… donc…" qui mène au résultat, sans saut. 5) Le rôle de chaque hypothèse : ce qui casse, avec un contre-exemple, si on l'enlève. 6) Les cas limites pour vérifier. 7) Le lien avec ce qui vient avant et après. 8) Trois questions "pourquoi ?" à se poser, avec leur réponse.`,
   exemple: () => `Donne un exemple entièrement chiffré, nouveau (pas celui du cours), réaliste pour l'Afrique de l'Ouest (FCFA), résolu ligne par ligne, puis une vérification du résultat par un autre chemin.`,
   exercice: () => `Propose trois exercices nouveaux, de difficulté croissante (facile, moyen, type examen). Pour chacun : énoncé complet, puis "### Solution" détaillée ligne par ligne.`,
   fiche: () => `Rédige une fiche de révision d'une page : définitions, formules avec le sens de chaque lettre, méthode, pièges, trois questions d'oral possibles avec leur réponse courte.`,
