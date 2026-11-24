@@ -1,6 +1,6 @@
 // POST /api/ia : texte (script de podcast, explication, exemple, exercice, quiz, fiche, réponse).
 // GET  /api/ia : dit seulement si l'IA est prête et si un code d'accès est demandé.
-import { entree, texte, gemini, texteDe, json, refus, erreur } from '../commun.mjs';
+import { cles, entree, texte, gemini, texteDe, json, refus, erreur } from '../commun.mjs';
 
 const REGLES = `Tu es le professeur particulier d'un étudiant de Master 2 (mathématiques, risque, finance, actuariat vie en zone CIMA).
 Réponds toujours en français, avec le tutoiement. Appuie-toi d'abord sur l'EXTRAIT DU COURS fourni ; si tu ajoutes une connaissance extérieure, dis-le. Si l'extrait ne permet pas de répondre, dis-le franchement au lieu d'inventer : n'invente jamais un numéro d'article, un chiffre ou une référence.
@@ -24,7 +24,7 @@ const MODES = {
 };
 
 export default async req => {
-  if (req.method === 'GET') return json({ pret: !!process.env.GEMINI_API_KEY, code: !!process.env.ACCES_CODE });
+  if (req.method === 'GET') return json({ pret: cles().length > 0, code: !!process.env.ACCES_CODE });
   if (req.method !== 'POST') return refus('Méthode non permise.', 405, 'methode');
   const b = await entree(req, 160000);
   if (b instanceof Response) return b;

@@ -15,13 +15,18 @@ quiz, fiche, question libre.
 
 | Variable | Rôle | Obligatoire |
 |---|---|---|
-| `GEMINI_API_KEY` | la clé Gemini, gardée côté serveur | oui |
+| `GEMINI_API_KEY` | une clé Gemini, ou plusieurs séparées par des virgules | oui |
+| `GEMINI_API_KEY_1` … `_20` | autre façon d'ajouter des clés, une par variable | non |
 | `ACCES_CODE` | mot de passe demandé avant chaque demande : protège ton quota | conseillé |
 | `GEMINI_MODEL` | modèle de texte (défaut `gemini-3.8-flash`) | non |
 | `GEMINI_TTS_MODEL` | modèle de voix (défaut `gemini-3.8-flash-tts`) | non |
 | `VOIX_AWA`, `VOIX_KOFI` | voix (défaut `Kore`, `Puck`) | non |
 
 4. **Deploys → Trigger deploy** : une variable n'est prise en compte qu'après un déploiement.
+
+Avec plusieurs clés, le site les utilise à tour de rôle ; si l'une est épuisée, refusée ou en
+panne, il passe à la suivante. Chez Google le quota est compté **par projet** : des clés d'un
+même projet partagent le même quota.
 
 Ne jamais écrire la clé dans un fichier du dépôt. Sans `ACCES_CODE`, toute personne qui
 connaît l'adresse du site peut utiliser ton quota Gemini (dans la limite de 12 demandes
