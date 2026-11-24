@@ -18,7 +18,7 @@ function lire(s){
 }
 function phrases(src){
   let s=src.replace(/^:::labo[\s\S]*?^:::$/gm,'').replace(/^:::preuve[\s\S]*?^:::$/gm,'');
-  const noms={intuition:'L’idée.',def:'Définition.',theo:'Théorème.',formule:'Formule.',exemple:'Exemple.',piege:'Attention.',methode:'Méthode.',exo:'Exercice.'};
+  const noms={clair:'En clair.',intuition:'L’idée.',def:'Définition.',theo:'Théorème.',formule:'Formule.',exemple:'Exemple.',piege:'Attention.',methode:'Méthode.',exo:'Exercice.'};
   s=s.replace(/^:::(\w+) ?(.*)$/gm,(_,t,x)=>(noms[t]||'')+' '+x+'.').replace(/^:::$/gm,'').replace(/^---$/gm,'Solution.').replace(/^### (.*)$/gm,'$1.');
   s=s.replace(/^[\s|:-]+$/gm,m=>/\|/.test(m)?'':m).replace(/^\|(.*)\|$/gm,(_,x)=>{let d=0;return x.replace(/\$|\|/g,k=>k==='$'?(d^=1,k):(d?k:', '))+'.'}).replace(/^\d+\. |^- /gm,'').replace(/\*\*/g,'').replace(/(\$\$[\s\S]+?\$\$|\$[^$]+\$)|\*/g,(m,a)=>a||'');
   s=s.replace(/\\\$/g,' dollars').replace(/\$\$([\s\S]+?)\$\$/g,(_,x)=>' '+lire(x)+'. ').replace(/\$([^$]+)\$/g,(_,x)=>' '+lire(x)+' ');

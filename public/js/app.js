@@ -20,7 +20,7 @@ function finir(nav){document.querySelectorAll('[data-nav]').forEach(a=>a.toggleA
 function accueil(){
   const T=liste.reduce((s,c)=>s+c.lecons.length,0),D=liste.reduce((s,c)=>s+lus(c),0);const d=E.dernier&&parId[E.dernier.c];
   const fam={};liste.forEach(c=>(fam[c.famille]=fam[c.famille]||[]).push(c));
-  vue.innerHTML='<div class="page"><h1>Tes 14 documents, expliqués un par un</h1><p class="chapo">'+T+' leçons avec définitions, démonstrations, formules, pièges et exercices corrigés. '+(D?'Tu en as lu '+D+'.':'Commence par celle que tu veux.')+'</p>'+
+  vue.innerHTML='<div class="page"><h1>Tes 14 documents, expliqués un par un</h1><p class="chapo">'+T+' leçons expliquées en clair, avec définitions, démonstrations, formules, pièges et exercices corrigés. '+(D?'Tu en as lu '+D+'.':'Commence par celle que tu veux.')+'</p>'+
    (d?'<a class="reprendre" href="#/c/'+d.id+'/'+E.dernier.i+'"><span>Reprendre</span><strong>'+d.lecons[E.dernier.i].titre+'</strong><em>'+d.titre+'</em></a>':'')+
    Object.entries(fam).map(([f,cs])=>'<section><h2>'+f+'</h2><ul class="docs">'+cs.map(c=>'<li><a href="#/c/'+c.id+'"><strong>'+c.titre+'</strong><span>'+c.resume+'</span><i class="jauge" style="--p:'+Math.round(100*lus(c)/c.lecons.length)+'%"></i><small>'+lus(c)+' / '+nb(c.lecons.length,'leçon')+' · '+c.quiz.length+' questions · '+c.pages+(/pptx/.test(c.fichier)?' diapositives':' pages')+'</small></a></li>').join('')+'</ul></section>').join('')+'</div>';
   finir('accueil');
@@ -28,15 +28,17 @@ function accueil(){
 function doc(c){
   const q=E.quiz[c.id];
   vue.innerHTML='<div class="page"><p class="fil">'+c.famille+'</p><h1>'+c.titre+'</h1><p class="chapo">'+c.resume+'</p><p class="src">Source : '+c.fichier+' — '+c.auteur+'</p>'+
-   '<div class="actions">'+c.podcasts.map((p,k)=>'<a class="bt plein" href="#/c/'+c.id+'/podcast/'+k+'">▶ Podcast</a>').join('')+'<a class="bt" href="#/c/'+c.id+'/quiz">Quiz'+(q!=null?' · '+q+'/'+c.quiz.length:'')+'</a><a class="bt" href="#/c/'+c.id+'/cartes">Cartes mémoire</a><a class="bt" href="#/formules/'+c.id+'">Formulaire</a></div>'+
+   '<div class="actions">'+c.podcasts.map((p,k)=>'<a class="bt plein" href="#/c/'+c.id+'/podcast/'+k+'">▶ Podcast</a>').join('')+'<a class="bt" href="#/c/'+c.id+'/quiz">Quiz'+(q!=null?' · '+q+'/'+c.quiz.length:'')+'</a><a class="bt" href="#/c/'+c.id+'/cartes">Cartes mémoire</a><a class="bt" href="#/formules/'+c.id+'">Formulaire</a><a class="bt" href="#/demander/podcast/'+c.id+'">Podcast IA sur mesure</a></div>'+
    '<ol class="som">'+c.lecons.map((l,i)=>'<li><a href="#/c/'+c.id+'/'+i+'"><strong>'+l.titre+'</strong><span>'+l.ref+(E.lu[c.id+'/'+i]?' · lu':'')+'</span></a></li>').join('')+'</ol></div>';
   finir('accueil');
 }
 function lecon(c,i){
   const l=c.lecons[i];E.dernier={c:c.id,i};sauver();const k=c.id+'/'+i;
-  vue.innerHTML='<article class="page lecon"><p class="fil"><a href="#/c/'+c.id+'">'+c.titre+'</a> · leçon '+(i+1)+' sur '+c.lecons.length+(l.ref?' · '+c.fichier.split('.').pop().toUpperCase()+' '+l.ref:'')+'</p><h1>'+l.titre+'</h1><div class="actions"><button class="bt" id="ecouter">▶ Écouter la leçon</button></div>'+html(l.src)+
-   '<footer class="bas"><button class="bt plein" id="lu">'+(E.lu[k]?'✓ Leçon lue':'Marquer comme lue')+'</button><div>'+(i?'<a class="bt" href="#/c/'+c.id+'/'+(i-1)+'">← '+c.lecons[i-1].titre+'</a>':'')+(c.lecons[i+1]?'<a class="bt" href="#/c/'+c.id+'/'+(i+1)+'">'+c.lecons[i+1].titre+' →</a>':'<a class="bt" href="#/c/'+c.id+'/quiz">Passer au quiz →</a>')+'</div></footer></article>';
+  vue.innerHTML='<article class="page lecon"><p class="fil"><a href="#/c/'+c.id+'">'+c.titre+'</a> · leçon '+(i+1)+' sur '+c.lecons.length+(l.ref?' · '+c.fichier.split('.').pop().toUpperCase()+' '+l.ref:'')+'</p><h1>'+l.titre+'</h1><div class="actions"><button class="bt" id="ecouter">▶ Écouter la leçon</button><a class="bt" href="#/demander/podcast/'+k+'">Podcast IA sur cette leçon</a><button class="bt" id="vers-ia">Je n’ai pas compris</button></div>'+html(l.src)+
+   '<footer class="bas"><button class="bt plein" id="lu">'+(E.lu[k]?'✓ Leçon lue':'Marquer comme lue')+'</button><div>'+(i?'<a class="bt" href="#/c/'+c.id+'/'+(i-1)+'">← '+c.lecons[i-1].titre+'</a>':'')+(c.lecons[i+1]?'<a class="bt" href="#/c/'+c.id+'/'+(i+1)+'">'+c.lecons[i+1].titre+' →</a>':'<a class="bt" href="#/c/'+c.id+'/quiz">Passer au quiz →</a>')+'</div></footer><section class="aide-ia"><h2>Demander à l’IA sur cette leçon</h2><div id="pan"></div></section></article>';
+  IA.panneau($('#pan'),{c,i});
   $('#lu').onclick=()=>{E.lu[k]?delete E.lu[k]:E.lu[k]=1;$('#lu').textContent=E.lu[k]?'✓ Leçon lue':'Marquer comme lue';sauver()};
+  $('#vers-ia').onclick=()=>{$('.aide-ia').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth'});$('.aide-ia input').focus({preventScroll:true})};
   $('#ecouter').onclick=()=>ORAL.charger(lecture(c,i),true);
   finir('accueil');
 }
@@ -80,18 +82,40 @@ function formules(id){
   finir('formules');
 }
 function podcasts(){
-  vue.innerHTML='<div class="page"><h1>Podcasts</h1><p class="chapo">Awa explique, Kofi pose les questions. Un épisode par document. Chaque leçon peut aussi s’écouter : bouton « Écouter la leçon ».</p><ol class="eps">'+liste.flatMap(c=>c.podcasts.map((p,k)=>{const e=episode(c,k);return '<li><button class="rond" data-ep="'+c.id+'/'+k+'" aria-label="Lire '+esc(p.titre)+'">▶</button><a href="'+e.lien+'"><strong>'+p.titre+'</strong><span>'+c.titre+(e.duree?' · '+mn(e.duree):'')+'</span></a>'+(e.mp3?'<a class="dl" href="'+e.mp3+'" download aria-label="Télécharger le MP3">MP3</a>':'')+'</li>'})).join('')+'</ol><h2>Voix de lecture des leçons</h2><p class="src">Les épisodes sont des MP3. Les leçons utilisent les voix françaises de ton appareil.</p><div class="filtre" id="voix"></div></div>';
+  vue.innerHTML='<div class="page"><h1>Podcasts</h1><p class="chapo">Awa explique, Kofi pose les questions. Un épisode par document. Chaque leçon peut aussi s’écouter : bouton « Écouter la leçon ».</p><div class="actions"><a class="bt plein" href="#/demander/podcast">Demander un podcast IA</a></div><div id="pia"></div><ol class="eps">'+liste.flatMap(c=>c.podcasts.map((p,k)=>{const e=episode(c,k);return '<li><button class="rond" data-ep="'+c.id+'/'+k+'" aria-label="Lire '+esc(p.titre)+'">▶</button><a href="'+e.lien+'"><strong>'+p.titre+'</strong><span>'+c.titre+(e.duree?' · '+mn(e.duree):'')+'</span></a>'+(e.mp3?'<a class="dl" href="'+e.mp3+'" download aria-label="Télécharger le MP3">MP3</a>':'')+'</li>'})).join('')+'</ol><h2>Voix de lecture des leçons</h2><p class="src">Les épisodes sont des MP3. Les leçons utilisent les voix françaises de ton appareil.</p><div class="filtre" id="voix"></div></div>';
   vue.querySelectorAll('[data-ep]').forEach(b=>b.onclick=()=>{const [i,k]=b.dataset.ep.split('/');ORAL.charger(episode(parId[i],+k),true)});
   const pv=()=>{const z=$('#voix');if(!z||!('speechSynthesis' in window))return;const l=ORAL.voix();z.innerHTML=l.length?'<label>Voix <select id="vx">'+l.map(v=>'<option value="'+esc(v.voiceURI)+'"'+(localStorage.getItem('tdr-voix-A')===v.voiceURI?' selected':'')+'>'+esc(v.name)+'</option>').join('')+'</select></label>':'Aucune voix française trouvée sur cet appareil.';const s=$('#vx');if(s)s.onchange=()=>localStorage.setItem('tdr-voix-A',s.value)};
+  IA.historique($('#pia'),d=>d.mode==='podcast').then(()=>{const z=$('#pia');if(z&&!z.querySelector('li'))z.innerHTML='';else if(z)z.insertAdjacentHTML('afterbegin','<h2>Mes podcasts IA</h2>')});
   pv();if('speechSynthesis' in window)speechSynthesis.onvoiceschanged=pv;
   finir('podcasts');
 }
-function podcast(c,k){
-  const e=episode(c,k);if(!e)return podcasts();
-  vue.innerHTML='<div class="page"><p class="fil"><a href="#/podcasts">Podcasts</a> · <a href="#/c/'+c.id+'">'+c.titre+'</a></p><h1>'+e.titre+'</h1><div class="actions"><button class="bt plein" id="pl">▶ Écouter'+(e.duree?' · '+mn(e.duree):'')+'</button>'+(e.mp3?'<a class="bt" href="'+e.mp3+'" download>Télécharger le MP3</a>':'')+'</div><ol class="trans" data-id="'+e.id+'">'+e.lignes.map((l,i)=>'<li><button data-i="'+i+'"><b>'+(l.v==='A'?'Awa':'Kofi')+'</b><span>'+esc(l.t)+'</span></button></li>').join('')+'</ol></div>';
+function podcast(c,k){const e=episode(c,k);if(!e)return podcasts();pagePod(e,'<a href="#/podcasts">Podcasts</a> · <a href="#/c/'+c.id+'">'+c.titre+'</a>','mp3','')}
+function pagePod(e,fil,ext,plus){
+  vue.innerHTML='<div class="page"><p class="fil">'+fil+'</p><h1>'+e.titre+'</h1><div class="actions"><button class="bt plein" id="pl">▶ Écouter'+(e.duree?' · '+mn(e.duree):'')+'</button>'+(e.mp3?'<a class="bt" href="'+e.mp3+'" download'+(ext==='wav'?'="podcast.wav"':'')+'>Télécharger le '+ext.toUpperCase()+'</a>':'')+plus+'</div><p class="etat" role="status"></p><ol class="trans" data-id="'+e.id+'">'+e.lignes.map((l,i)=>'<li><button data-i="'+i+'"><b>'+(l.v==='A'?'Awa':'Kofi')+'</b><span>'+esc(l.t)+'</span></button></li>').join('')+'</ol></div>';
   $('#pl').onclick=()=>ORAL.charger(e,true);
   vue.querySelectorAll('.trans button').forEach(b=>b.onclick=()=>{if(!ORAL.P.file||ORAL.P.file.id!==e.id)ORAL.charger(e,true);const go=()=>ORAL.aller(+b.dataset.i);e.mp3&&ORAL.audio.readyState<1?ORAL.audio.addEventListener('loadedmetadata',go,{once:true}):go()});
   finir('podcasts');majL(ORAL.P);
+}
+// ---- demandes à l'IA
+function demander(m,id,i){
+  const c=parId[id]||null;
+  vue.innerHTML='<div class="page"><h1>Demander à l’IA</h1><p class="chapo">Un podcast sur mesure, une autre explication, un exemple, un quiz : choisis la leçon, Gemini s’appuie sur son texte.</p><div id="pan"></div><h2>Mes demandes</h2><div id="his"></div></div>';
+  const h=()=>{const z=$('#his');if(z)IA.historique(z)};
+  IA.panneau($('#pan'),{mode:IA.MODES[m]?m:null,c,i:null,apres:h});if(c&&c.lecons[+i]&&i!==''&&i!=null){const s=$('#pan [name=lec]');s.value=i}
+  h();finir('demander');
+}
+async function demande(id){
+  vue.innerHTML='<div class="page"><p class="chapo">Chargement</p></div>';finir('demander');
+  const d=await IA.lire(id);if(!location.hash.endsWith('/'+id))return;
+  const fil='<a href="#/demander">Demandes</a>'+(d&&parId[d.coursId]?' · <a href="#/c/'+d.coursId+(d.i!=null?'/'+d.i:'')+'">'+d.cours+'</a>':'');
+  if(!d){vue.innerHTML='<div class="page"><p class="fil">'+fil+'</p><h1>Demande introuvable</h1><p class="chapo">Elle a été supprimée, ou faite sur un autre appareil.</p></div>';return}
+  if(d.mode==='podcast'){
+    const voir=()=>{pagePod(IA.item(d),fil,'wav',d.audio?'':'<button class="bt" id="vx2">Fabriquer les voix Gemini</button>');const b=$('#vx2');
+      if(b)b.onclick=async()=>{b.disabled=true;const z=$('.etat');try{await IA.voix(d,(p,t)=>{z.className='etat';z.textContent=t});if(location.hash.endsWith('/'+id))voir()}catch(x){z.className='etat ko';z.textContent=x.message;b.disabled=false}}};
+    voir();
+  }else if(d.mode==='quiz')quiz('Demandes',d.questions,'#/demander');
+  else{vue.innerHTML='<article class="page lecon"><p class="fil">'+fil+'</p><h1>'+esc(d.titre)+'</h1>'+(d.demande?'<p class="src">Ta précision : '+esc(d.demande)+'</p>':'')+IA.reponse(d)+'</article>';IA.brancher(vue,d)}
+  finir('demander');
 }
 function labo(){vue.innerHTML='<div class="page"><h1>Labo</h1><p class="chapo">Change les paramètres et regarde ce que font les formules.</p>'+Object.keys(LABOS.tous).map(k=>'<div class="labo" data-labo="'+k+'"></div>').join('')+'</div>';finir('labo')}
 const plat=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
@@ -124,6 +148,7 @@ function route(){
     else if(d==='podcast')podcast(c,+e||0);
     else if(d&&c.lecons[+d])lecon(c,+d);else doc(c)}
   else if(a==='podcasts')podcasts();else if(a==='formules')formules(b);else if(a==='reviser')reviser();else if(a==='labo')labo();
+  else if(a==='demander')demander(b,d,e);else if(a==='ia'&&b)demande(b);
   else if(a==='chercher'&&b)recherche(b);else accueil();
   document.title=($('h1',vue)?$('h1',vue).textContent.slice(0,60)+' · ':'')+'TDR M2';window.scrollTo(0,0);
 }

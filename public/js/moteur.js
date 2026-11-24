@@ -2,7 +2,7 @@
 (function(){
 const COURS=[]; const parId={};
 const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-const TYPES={intuition:'L’idée',def:'Définition',theo:'Théorème',preuve:'Démonstration',formule:'Formule',exemple:'Exemple',piege:'Attention',methode:'Méthode',exo:'Exercice',labo:'Simulateur'};
+const TYPES={clair:'En clair',intuition:'L’idée',def:'Définition',theo:'Théorème',preuve:'Démonstration',formule:'Formule',exemple:'Exemple',piege:'Attention',methode:'Méthode',exo:'Exercice',labo:'Simulateur'};
 function tex(s,bloc){
   try{return katex.renderToString(s,{displayMode:bloc,throwOnError:true,strict:false})}
   catch(e){(window.ERREURS=window.ERREURS||[]).push(e.message+' :: '+s);return '<code class="err">'+esc(s)+'</code>'}
@@ -81,5 +81,12 @@ function COURSf(meta,src){
   }
   COURS.push(c);parId[c.id]=c;
 }
-window.COURS=COURSf;window.TDR={liste:COURS,parId,html,inline,tex,esc};
+// Compléments. « ## @n » ajoute à la fin de la leçon n ; tout autre titre crée une leçon à la fin.
+// EXPLIQUE : « ## n » place l'encadré « En clair » en tête de la leçon n.
+function lec(ti,ref,b){const f=[];for(const m of b.matchAll(/^:::formule ?(.*)\n([\s\S]*?)^:::$/gm))f.push({t:m[1],c:m[2]});return{titre:ti,ref:ref||'',src:b,formules:f}}
+function PLUS(id,src){const c=parId[id];for(const p of src.split(/^## /m).slice(1)){const nl=p.indexOf('\n'),t=p.slice(0,nl).trim(),b=p.slice(nl+1);const k=t.match(/^@(\d+)/);
+  if(k){const l=c.lecons[k[1]-1],n=lec('','',b);l.src+='\n'+b;l.formules.push(...n.formules)}
+  else{const [ti,ref]=t.split(' | ');c.lecons.push(lec(ti,ref,b))}}}
+function EXPLIQUE(id,src){const c=parId[id];for(const p of src.split(/^## /m).slice(1)){const nl=p.indexOf('\n'),l=c.lecons[parseInt(p)-1];if(!l)throw new Error(id+' : pas de leçon '+p.slice(0,nl));l.clair=true;l.src=':::clair\n'+p.slice(nl+1).trim()+'\n:::\n'+l.src}}
+window.COURS=COURSf;window.PLUS=PLUS;window.EXPLIQUE=EXPLIQUE;window.TDR={liste:COURS,parId,html,inline,tex,esc};
 })();
