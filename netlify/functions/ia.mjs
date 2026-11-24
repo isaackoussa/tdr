@@ -1,6 +1,6 @@
 // POST /api/ia : texte (script de podcast, explication, exemple, exercice, quiz, fiche, réponse).
 // GET  /api/ia : dit seulement si l'IA est prête et si un code d'accès est demandé.
-import { cles, entree, texte, gemini, texteDe, json, refus, erreur } from '../commun.mjs';
+import { cles, entree, texte, gemini, texteDe, json, refus, flux } from '../commun.mjs';
 
 const REGLES = `Tu es le professeur particulier d'un étudiant de Master 2 (mathématiques, risque, finance, actuariat vie en zone CIMA).
 Réponds toujours en français, avec le tutoiement. Appuie-toi d'abord sur l'EXTRAIT DU COURS fourni ; si tu ajoutes une connaissance extérieure, dis-le. Si l'extrait ne permet pas de répondre, dis-le franchement au lieu d'inventer : n'invente jamais un numéro d'article, un chiffre ou une référence.
@@ -53,8 +53,8 @@ Le texte sera LU À VOIX HAUTE : aucune formule, aucun symbole, aucun sigle non 
   } else if (MODES[mode]) corps = { input: tete + MODES[mode]() + '\n\n' + FORMAT };
   else return refus('Type de demande inconnu.', 400, 'mode');
 
-  try {
-    const brut = texteDe(await gemini({ model: modele, ...corps })).trim();
+  return flux(async () => {
+    const brut = texteDe(await gemini({ model: modele, generation_config: { thinking_level: 'low' }, ...corps })).trim();
     if (!brut) throw Object.assign(new Error('Gemini n’a rien renvoyé. Reformule la demande.'), { status: 502, code: 'vide' });
     if (!corps.response_format) return json({ texte: brut });
     let o;
@@ -69,7 +69,7 @@ Le texte sera LU À VOIX HAUTE : aucune formule, aucun symbole, aucun sigle non 
       .filter(q => q.q && q.r.some(r => r.ok));
     if (!questions.length) throw Object.assign(new Error('Quiz inutilisable. Réessaie.'), { status: 502, code: 'format' });
     return json({ questions });
-  } catch (e) { return erreur(e); }
+  });
 };
 
 export const config = { path: '/api/ia', rateLimit: { windowLimit: 12, windowSize: 60, aggregateBy: ['ip', 'domain'] } };

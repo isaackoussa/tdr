@@ -15,7 +15,8 @@ const code=()=>{try{return localStorage.getItem('tdr-acces')||''}catch(e){return
 async function appel(chemin,corps){
   let r;try{r=await fetch('/api/'+chemin,{method:'POST',headers:{'content-type':'application/json','x-acces':code()},body:JSON.stringify(corps)})}
   catch(e){throw Object.assign(new Error('Pas de connexion au serveur. Vérifie ton réseau.'),{code:'reseau'})}
-  if(r.ok)return r;
+  if(r.ok){if(chemin!=='ia')return r;const t=await r.text();let o;try{o=JSON.parse(t)}catch(e){throw Object.assign(new Error('La réponse a été coupée : Gemini est trop lent. Réessaie, ou demande plus court.'),{code:'gemini504'})}
+    if(o.erreur)throw Object.assign(new Error(o.erreur),{code:o.code});return{json:async()=>o}}
   const o=await r.json().catch(()=>null);
   if(o&&o.erreur)throw Object.assign(new Error(o.erreur),{code:o.code,status:r.status});
   if(r.status===404||r.status===405||r.status===501)throw Object.assign(new Error('Le service IA n’existe pas à cette adresse : ouvre l’application depuis son site Netlify.'),{code:'absent'});
@@ -30,7 +31,7 @@ function contexte(c,i){
   return c.lecons.map(l=>('## '+l.titre+'\n'+l.src.replace(/^:::(labo|preuve|exo)[\s\S]*?^:::$/gm,'')).slice(0,max)).join('\n').slice(0,40000);
 }
 // ---- voix : morceaux d'environ 1 000 caractères, assemblés en un seul WAV
-function morceaux(lignes){const M=[];let m=[],n=0;lignes.forEach((l,k)=>{if(m.length&&(n+l.t.length>1000||m.length>=10)){M.push(m);m=[];n=0}m.push(k);n+=l.t.length});if(m.length)M.push(m);return M}
+function morceaux(lignes){const M=[];let m=[],n=0;lignes.forEach((l,k)=>{if(m.length&&(n+l.t.length>420||m.length>=5)){M.push(m);m=[];n=0}m.push(k);n+=l.t.length});if(m.length)M.push(m);return M}
 function pcm(buf){const v=new DataView(buf);if(buf.byteLength<46||v.getUint32(0,false)!==0x52494646)throw new Error('Son illisible.');let p=12;while(p+8<=buf.byteLength&&v.getUint32(p,false)!==0x64617461)p+=8+v.getUint32(p+4,true);
   const n=Math.min(v.getUint32(p+4,true),buf.byteLength-p-8);return{d:new Uint8Array(buf,p+8,n-n%2),taux:v.getUint32(24,true),voies:v.getUint16(22,true),bits:v.getUint16(34,true)}}
 const attendre=ms=>new Promise(r=>setTimeout(r,ms));
@@ -78,7 +79,7 @@ function panneau(zone,o){
     try{
       const l=c&&i!=null?c.lecons[i]:null;
       const corps={mode:m,cours:c?c.titre:'',lecon:l?l.titre:'',niveau:f.niveau.value,minutes:+f.minutes.value,ton:f.ton.value,demande:dem,contexte:contexte(c,i)};
-      let rep;try{rep=await appel('ia',corps)}catch(x){if(!/^gemini5/.test(x.code||''))throw x;for(let k=15;k>0;k--){attente='Google est surchargé, nouvel essai dans '+k+' s';dire(attente);await attendre(1000)}attente='';rep=await appel('ia',corps)}
+      let rep;try{rep=await appel('ia',corps)}catch(x){if(!/^gemini5/.test(x.code||'')&&x.status!==504&&x.status!==502)throw x;for(let k=15;k>0;k--){attente='Google est surchargé, nouvel essai dans '+k+' s';dire(attente);await attendre(1000)}attente='';rep=await appel('ia',corps)}
       const r=await rep.json();clearInterval(h);
       const d=await garder({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),date:Date.now(),mode:m,coursId:c?c.id:null,i,cours:c?c.titre:'',titre:m==='podcast'?r.titre:MODES[m]+' : '+(m==='question'?dem.slice(0,80):l?l.titre:c?c.titre:dem.slice(0,80)),demande:dem,texte:r.texte,questions:r.questions,lignes:r.lignes});
       if(m==='podcast'){

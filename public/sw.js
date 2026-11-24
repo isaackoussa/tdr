@@ -1,6 +1,6 @@
 // Réseau d'abord, cache en secours : l'app reste utilisable hors connexion.
 // Les MP3 ne sont pas mis en cache ici (trop lourds, lectures partielles).
-const C='tdr-v4';
+const C='tdr-v5';
 self.addEventListener('install',()=>self.skipWaiting());
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{

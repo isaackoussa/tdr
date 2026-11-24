@@ -36,7 +36,7 @@ export const texte = (v, max) => (typeof v === 'string' ? v.replace(/[\u0000-\u0
 const pause = ms => new Promise(r => setTimeout(r, ms));
 // corps.model peut être une liste : le premier modèle, puis ceux de secours si Google est surchargé ou le quota atteint.
 export async function gemini({ model, ...corps }) {
-  const K = cles(), n = depart++, fin = Date.now() + 52000, t0 = Date.now(), etats = [], refusees = new Set();
+  const K = cles(), n = depart++, fin = Date.now() + 50000, t0 = Date.now(), etats = [], refusees = new Set();
   const modeles = [...new Set([model].flat().filter(Boolean))];
   boucle: for (const mod of modeles) {
     const ordre = K.map((c, i) => ({ c, num: i + 1, rang: (i - n % K.length + K.length) % K.length, dort: Math.max(repos.get(c) || 0, repos.get(c + mod) || 0) > t0 }))
@@ -52,10 +52,11 @@ export async function gemini({ model, ...corps }) {
           method: 'POST',
           headers: { 'content-type': 'application/json', 'x-goog-api-key': c, 'api-revision': '2026-05-20' },
           body: JSON.stringify({ model: mod, ...corps }),
-          signal: AbortSignal.timeout(reste)
+          signal: AbortSignal.timeout(mod === modeles.at(-1) ? reste : Math.min(reste, 26000))
         });
         t = await r.text();
       } catch (e) {
+        if (e.name === 'TimeoutError' && mod !== modeles.at(-1) && fin - Date.now() > 8000) { etats.push(504); break; }   // trop lent : modèle suivant
         if (e.name !== 'TimeoutError') { etats.push(503); if (++pannes >= 2) break; await pause(800); continue; }
         throw Object.assign(new Error('Gemini a mis trop de temps à répondre. Réessaie, ou demande plus court.'), { status: 504, code: 'delai' });
       }
@@ -92,5 +93,19 @@ export const texteDe = o => contenus(o).filter(c => typeof c.text === 'string' &
 export function audioDe(o) {
   const c = contenus(o).find(x => x.type === 'audio' && x.data);
   return c ? Buffer.from(c.data, 'base64') : null;
+}
+// Réponse envoyée au fil de l'eau : des espaces (ignorés par JSON) maintiennent la connexion pendant que Gemini travaille.
+export function flux(travail) {
+  const e = new TextEncoder();
+  let h;
+  return new Response(new ReadableStream({
+    start(c) {
+      const dire = s => { try { c.enqueue(e.encode(s)); } catch { /* lecteur parti */ } };
+      dire(' ');
+      h = setInterval(() => dire(' '), 3000);
+      travail().catch(erreur).then(r => r.text()).then(t => { clearInterval(h); dire(t); try { c.close(); } catch { /* déjà fermé */ } });
+    },
+    cancel() { clearInterval(h); }
+  }), { headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
 }
 export const erreur = e => refus(e.status ? e.message : 'Erreur interne.', e.status || 500, e.code || 'interne');
