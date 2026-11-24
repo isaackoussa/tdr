@@ -36,7 +36,7 @@ export default async req => {
   if (mode === 'question' && !demande) return refus('Écris ta question.', 400, 'vide');
 
   const tete = `${REGLES}\n\nDocument : ${cours || 'non précisé'}\nLeçon : ${lecon || 'non précisée'}\nNiveau : ${niveau}\n\n<extrait_du_cours>\n${contexte || '(aucun extrait)'}\n</extrait_du_cours>\n\n<demande_de_l_etudiant>\n${demande || '(aucune précision)'}\n</demande_de_l_etudiant>\n\n`;
-  const modele = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+  const modele = [process.env.GEMINI_MODEL || 'gemini-3.8-flash', ...(process.env.GEMINI_MODEL_SECOURS || 'gemini-3.6-flash,gemini-3.5-flash-lite').split(/[\s,;]+/)];
   let corps;
   if (mode === 'podcast') {
     const min = [3, 5, 8, 12].includes(+b.minutes) ? +b.minutes : 5;

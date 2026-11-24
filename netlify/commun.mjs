@@ -33,45 +33,52 @@ export async function entree(req, maxOctets) {
 
 export const texte = (v, max) => (typeof v === 'string' ? v.replace(/[\u0000-\u0008\u000b-\u001f]/g, ' ').trim().slice(0, max) : '');
 
-export async function gemini(corps) {
-  const K = cles(), n = depart++, fin = Date.now() + 52000, t0 = Date.now();
-  const ordre = K.map((c, i) => ({ c, num: i + 1, rang: (i - n % K.length + K.length) % K.length, dort: (repos.get(c) || 0) > t0 }))
-    .sort((x, y) => x.dort - y.dort || x.rang - y.rang);
-  const etats = [];
-  for (const { c, num } of ordre) {
-    if (fin - Date.now() < 3000) break;
-    let r;
-    try {
-      r = await fetch(URL_GEMINI, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-goog-api-key': c, 'api-revision': '2026-05-20' },
-        body: JSON.stringify(corps),
-        signal: AbortSignal.timeout(fin - Date.now())
-      });
-    } catch (e) {
-      throw Object.assign(new Error(e.name === 'TimeoutError' ? 'Gemini a mis trop de temps à répondre. Réessaie, ou demande plus court.' : 'Gemini est injoignable pour le moment.'), { status: 504, code: 'delai' });
+const pause = ms => new Promise(r => setTimeout(r, ms));
+// corps.model peut être une liste : le premier modèle, puis ceux de secours si Google est surchargé ou le quota atteint.
+export async function gemini({ model, ...corps }) {
+  const K = cles(), n = depart++, fin = Date.now() + 52000, t0 = Date.now(), etats = [], refusees = new Set();
+  const modeles = [...new Set([model].flat().filter(Boolean))];
+  boucle: for (const mod of modeles) {
+    const ordre = K.map((c, i) => ({ c, num: i + 1, rang: (i - n % K.length + K.length) % K.length, dort: Math.max(repos.get(c) || 0, repos.get(c + mod) || 0) > t0 }))
+      .sort((x, y) => x.dort - y.dort || x.rang - y.rang);
+    let pannes = 0;
+    for (const { c, num } of ordre) {
+      if (refusees.has(c)) continue;
+      const reste = fin - Date.now();
+      if (reste < 4000) break boucle;
+      let r, t;
+      try {
+        r = await fetch(URL_GEMINI, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-goog-api-key': c, 'api-revision': '2026-05-20' },
+          body: JSON.stringify({ model: mod, ...corps }),
+          signal: AbortSignal.timeout(reste)
+        });
+        t = await r.text();
+      } catch (e) {
+        if (e.name !== 'TimeoutError') { etats.push(503); if (++pannes >= 2) break; await pause(800); continue; }
+        throw Object.assign(new Error('Gemini a mis trop de temps à répondre. Réessaie, ou demande plus court.'), { status: 504, code: 'delai' });
+      }
+      if (r.ok) {
+        try { return JSON.parse(t); } catch { throw Object.assign(new Error('Réponse de Gemini illisible.'), { status: 502, code: 'format' }); }
+      }
+      console.error('Gemini', mod, 'clé n°', num, r.status, t.slice(0, 400));   // jamais la clé elle-même
+      etats.push(r.status);
+      if (r.status === 401 || r.status === 403 || (r.status === 400 && /api[ _]?key/i.test(t))) { refusees.add(c); repos.set(c, Date.now() + 600000); }
+      else if (r.status === 429) repos.set(c + mod, Date.now() + 60000);
+      else if (r.status >= 500) { if (++pannes >= 2) break; await pause(800); }   // surcharge : ça ne vient pas de la clé
+      else break;                                                                  // modèle ou demande en cause : modèle suivant
     }
-    const t = await r.text();
-    if (r.ok) {
-      repos.delete(c);
-      try { return JSON.parse(t); } catch { throw Object.assign(new Error('Réponse de Gemini illisible.'), { status: 502, code: 'format' }); }
-    }
-    console.error('Gemini, clé n°', num, r.status, t.slice(0, 400));   // jamais la clé elle-même
-    etats.push(r.status);
-    const cleRefusee = r.status === 401 || r.status === 403 || (r.status === 400 && /api[ _]?key/i.test(t));
-    if (cleRefusee) repos.set(c, Date.now() + 600000);
-    else if (r.status === 429) repos.set(c, Date.now() + 60000);
-    else if (r.status < 500) break;   // demande ou modèle en cause : changer de clé n'y ferait rien
   }
-  const st = etats.includes(429) ? 429 : etats[etats.length - 1] || 504;
+  const st = [503, 500, 502, 504, 529].find(x => etats.includes(x)) || (etats.includes(429) ? 429 : etats[0] || 504);
   const m = {
       400: 'Gemini a refusé la demande (400) : vérifie la clé et le nom du modèle dans Netlify.',
       401: 'Aucune clé Gemini n’est acceptée : vérifie les clés dans Netlify.',
       403: 'Aucune clé Gemini n’est acceptée : vérifie les clés et leurs droits.',
       404: 'Le modèle demandé n’existe pas : vérifie GEMINI_MODEL et GEMINI_TTS_MODEL.',
       429: K.length > 1 ? 'Le quota de toutes tes clés Gemini utilisables est atteint. Réessaie dans quelques minutes.' : 'Le quota Gemini est atteint pour l’instant. Réessaie dans quelques minutes.'
-    }[st] || 'Gemini a renvoyé une erreur (' + st + '). Réessaie.';
-    throw Object.assign(new Error(m), { status: st === 429 ? 429 : 502, code: 'gemini' + st });
+    }[st] || (st >= 500 && 'Les serveurs de Google sont surchargés en ce moment (' + st + '). Ce n’est pas ta clé : réessaie dans une ou deux minutes.') || 'Gemini a renvoyé une erreur (' + st + '). Réessaie.';
+    throw Object.assign(new Error(m), { status: st === 429 ? 429 : st >= 500 ? 503 : 502, code: 'gemini' + st });
 }
 
 // Contenus produits par le modèle, quel que soit le rangement exact : steps[] puis content[].

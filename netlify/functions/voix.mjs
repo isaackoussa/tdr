@@ -23,7 +23,7 @@ export default async req => {
   const presentes = [...new Set(lignes.map(l => l.v))];
   try {
     const a = audioDe(await gemini({
-      model: process.env.GEMINI_TTS_MODEL || 'gemini-3.8-flash-tts',
+      model: [process.env.GEMINI_TTS_MODEL || 'gemini-3.8-flash-tts', ...(process.env.GEMINI_TTS_SECOURS || 'gemini-3.8-flash-lite-tts').split(/[\s,;]+/)],
       input: [{ type: 'user_input', content: lignes.map(l => ({ type: 'text', text: l.t, annotations: [{ type: 'speech_metadata', speaker: VOIX[l.v][0], style: VOIX[l.v][2] }] })) }],
       response_format: { type: 'audio' },
       generation_config: { speech_config: { speakers: presentes.map(v => ({ speaker: VOIX[v][0], voice: VOIX[v][1]() })) } }

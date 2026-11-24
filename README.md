@@ -20,6 +20,7 @@ quiz, fiche, question libre.
 | `ACCES_CODE` | mot de passe demandé avant chaque demande : protège ton quota | conseillé |
 | `GEMINI_MODEL` | modèle de texte (défaut `gemini-3.8-flash`) | non |
 | `GEMINI_TTS_MODEL` | modèle de voix (défaut `gemini-3.8-flash-tts`) | non |
+| `GEMINI_MODEL_SECOURS`, `GEMINI_TTS_SECOURS` | modèles essayés si Google est surchargé ou le quota atteint | non |
 | `VOIX_AWA`, `VOIX_KOFI` | voix (défaut `Kore`, `Puck`) | non |
 
 4. **Deploys → Trigger deploy** : une variable n'est prise en compte qu'après un déploiement.

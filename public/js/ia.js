@@ -39,7 +39,7 @@ async function voix(d,avance){
   for(let k=0;k<M.length;k++){
     avance(k/M.length,'Voix '+(k+1)+' sur '+M.length);
     let r;try{r=await appel('voix',{lignes:M[k].map(i=>d.lignes[i])})}
-    catch(e){if(e.status!==429&&e.status!==504&&e.status!==502)throw e;avance(k/M.length,'Service occupé, nouvel essai dans 25 secondes');await attendre(25000);r=await appel('voix',{lignes:M[k].map(i=>d.lignes[i])})}
+    catch(e){if(e.status!==429&&e.status!==504&&e.status!==503&&e.status!==502||e.code==='cle')throw e;avance(k/M.length,'Service occupé, nouvel essai dans 25 secondes');await attendre(25000);r=await appel('voix',{lignes:M[k].map(i=>d.lignes[i])})}
     const x=pcm(await r.arrayBuffer());f=f||x;if(x.taux!==f.taux||x.voies!==f.voies||x.bits!==f.bits)throw new Error('Morceaux de son incompatibles.');
     const bps=f.taux*f.voies*f.bits/8,dur=x.d.length/bps,L=M[k].map(i=>d.lignes[i].t.length),T=L.reduce((a,b)=>a+b,0);let t=octets/bps;
     M[k].forEach((i,j)=>{temps[i]=Math.round(t*100)/100;t+=dur*L[j]/T});
@@ -74,10 +74,12 @@ function panneau(zone,o){
     const dem=f.demande.value.trim();if(!c&&!dem){dire('Choisis un document ou écris ton sujet.',true);f.demande.focus();return}if(m==='question'&&!dem){dire('Écris ta question.',true);f.demande.focus();return}
     if(f.acces.value)try{localStorage.setItem('tdr-acces',f.acces.value)}catch(x){}
     occupe=true;f.querySelector('[type=submit]').disabled=true;so.innerHTML='';
-    const t0=Date.now(),nom=m==='podcast'?'Écriture du script':'Gemini rédige',h=setInterval(()=>dire(nom+' ('+Math.round((Date.now()-t0)/1000)+' s)'),1000);dire(nom);
+    let attente='';const t0=Date.now(),nom=m==='podcast'?'Écriture du script':'Gemini rédige',h=setInterval(()=>dire(attente||nom+' ('+Math.round((Date.now()-t0)/1000)+' s)'),1000);dire(nom);
     try{
       const l=c&&i!=null?c.lecons[i]:null;
-      const r=await(await appel('ia',{mode:m,cours:c?c.titre:'',lecon:l?l.titre:'',niveau:f.niveau.value,minutes:+f.minutes.value,ton:f.ton.value,demande:dem,contexte:contexte(c,i)})).json();clearInterval(h);
+      const corps={mode:m,cours:c?c.titre:'',lecon:l?l.titre:'',niveau:f.niveau.value,minutes:+f.minutes.value,ton:f.ton.value,demande:dem,contexte:contexte(c,i)};
+      let rep;try{rep=await appel('ia',corps)}catch(x){if(!/^gemini5/.test(x.code||''))throw x;for(let k=15;k>0;k--){attente='Google est surchargé, nouvel essai dans '+k+' s';dire(attente);await attendre(1000)}attente='';rep=await appel('ia',corps)}
+      const r=await rep.json();clearInterval(h);
       const d=await garder({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),date:Date.now(),mode:m,coursId:c?c.id:null,i,cours:c?c.titre:'',titre:m==='podcast'?r.titre:MODES[m]+' : '+(m==='question'?dem.slice(0,80):l?l.titre:c?c.titre:dem.slice(0,80)),demande:dem,texte:r.texte,questions:r.questions,lignes:r.lignes});
       if(m==='podcast'){
         try{await voix(d,(p,t)=>dire(t,false,p));dire('Podcast prêt.')}catch(x){dire('Le script est prêt, mais pas les voix : '+x.message+' Tu peux l’écouter avec la voix de ton appareil, et réessayer plus tard.',true)}
